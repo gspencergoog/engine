@@ -10,7 +10,7 @@ part of dart.ui;
 /// To create a Scene object, use a [SceneBuilder].
 ///
 /// Scene objects can be displayed on the screen using the
-/// [Window.render] method.
+/// [FlutterWindow.render] method.
 @pragma('vm:entry-point')
 class Scene extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
@@ -178,7 +178,7 @@ class PhysicalShapeEngineLayer extends _EngineLayerWrapper {
 
 /// Builds a [Scene] containing the given visuals.
 ///
-/// A [Scene] can then be rendered using [Window.render].
+/// A [Scene] can then be rendered using [FlutterWindow.render].
 ///
 /// To draw graphical operations onto a [Scene], first create a
 /// [Picture] using a [PictureRecorder] and a [Canvas], and then add
@@ -653,8 +653,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The "UI thread" is the thread that includes all the execution of
   /// the main Dart isolate (the isolate that can call
-  /// [Window.render]). The UI thread frame time is the total time
-  /// spent executing the [Window.onBeginFrame] callback. The "raster
+  /// [FlutterWindow.render]). The UI thread frame time is the total time
+  /// spent executing the [FlutterWindow.onBeginFrame] callback. The "raster
   /// thread" is the thread (running on the CPU) that subsequently
   /// processes the [Scene] provided by the Dart code to turn it into
   /// GPU commands and send it to the GPU.
@@ -797,7 +797,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// Returns a [Scene] containing the objects that have been added to
   /// this scene builder. The [Scene] can then be displayed on the
-  /// screen with [Window.render].
+  /// screen with [FlutterWindow.render].
   ///
   /// After calling this function, the scene builder object is invalid and
   /// cannot be used further.

@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
+#include <gdk/gdkx.h>
+
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
@@ -11,8 +13,6 @@
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
-
-#include <gdk/gdkx.h>
 
 static constexpr int kMicrosecondsPerMillisecond = 1000;
 
@@ -215,8 +215,10 @@ static void fl_view_size_allocate(GtkWidget* widget,
                            allocation->height);
   }
 
-  // TODO(robert-ancell): This pixel ratio won't work on hidpi displays.
   fl_engine_send_window_metrics_event(self->engine, allocation->width,
+                                      allocation->height, 1);
+  // TODO(robert-ancell): This pixel ratio won't work on hidpi displays.
+  fl_engine_send_screen_metrics_event(self->engine, allocation->width,
                                       allocation->height, 1);
 }
 

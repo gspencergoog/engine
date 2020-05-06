@@ -28,7 +28,9 @@ part '../../lib/ui/hooks.dart';
 part '../../lib/ui/lerp.dart';
 part '../../lib/ui/natives.dart';
 part '../../lib/ui/painting.dart';
+part '../../lib/ui/platform_dispatcher.dart';
 part '../../lib/ui/pointer.dart';
+part '../../lib/ui/screen.dart';
 part '../../lib/ui/semantics.dart';
 part '../../lib/ui/text.dart';
 part '../../lib/ui/window.dart';
@@ -46,16 +48,26 @@ void main() {
     PlatformMessageCallback originalOnPlatformMessage;
     VoidCallback originalOnTextScaleFactorChanged;
 
-    double oldDPR;
-    Size oldSize;
+    Object oldWindowId;
+    Object oldScreenId;
+    Rect oldGeometry;
     double oldDepth;
     WindowPadding oldPadding;
     WindowPadding oldInsets;
     WindowPadding oldSystemGestureInsets;
 
     setUp(() {
-      oldDPR = window.devicePixelRatio;
-      oldSize = window.physicalSize;
+      PlatformDispatcher.instance._viewConfigurations.clear();
+      PlatformDispatcher.instance._screenConfigurations.clear();
+      PlatformDispatcher.instance._views.clear();
+      PlatformDispatcher.instance._screens.clear();
+      PlatformDispatcher.instance._screenConfigurations[0] = const ScreenConfiguration();
+      PlatformDispatcher.instance._screens[0] = Screen._(screenId: 0, platformDispatcher: PlatformDispatcher.instance);
+      PlatformDispatcher.instance._viewConfigurations[0] = ViewConfiguration(screen: PlatformDispatcher.instance._screens[0]);
+      PlatformDispatcher.instance._views[0] = FlutterWindow._(windowId: 0, platformDispatcher: PlatformDispatcher.instance);
+      oldWindowId = window._windowId;
+      oldScreenId = window.viewConfiguration.screen._screenId;
+      oldGeometry = window.viewConfiguration.geometry;
       oldDepth = window.physicalDepth;
       oldPadding = window.viewPadding;
       oldInsets = window.viewInsets;
@@ -75,9 +87,12 @@ void main() {
 
     tearDown(() {
       _updateWindowMetrics(
-        oldDPR,                         // DPR
-        oldSize.width,                  // width
-        oldSize.height,                 // height
+        oldWindowId,                    // window id
+        oldScreenId,                    // screen id
+        oldGeometry.left,               // window left coordinate
+        oldGeometry.top,                // window top coordinate
+        oldGeometry.width,              // width
+        oldGeometry.height,             // height
         oldDepth,                       // depth
         oldPadding.top,                 // padding top
         oldPadding.right,               // padding right
@@ -113,19 +128,22 @@ void main() {
     test('onMetricsChanged preserves callback zone', () {
       Zone innerZone;
       Zone runZone;
-      double devicePixelRatio;
+      double left;
 
       runZoned(() {
         innerZone = Zone.current;
         window.onMetricsChanged = () {
           runZone = Zone.current;
-          devicePixelRatio = window.devicePixelRatio;
+          left = window.physicalGeometry.left;
         };
       });
 
       window.onMetricsChanged();
       _updateWindowMetrics(
-        0.1234, // DPR
+        0,      // window id
+        0,      // screen id
+        0.1234, // left
+        0.0,    // top
         0.0,    // width
         0.0,    // height
         0.0,    // depth
@@ -144,7 +162,7 @@ void main() {
       );
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
-      expect(devicePixelRatio, equals(0.1234));
+      expect(left, equals(0.1234));
     });
 
     test('onLocaleChanged preserves callback zone', () {
@@ -205,7 +223,7 @@ void main() {
       Zone innerZone;
       Zone runZone;
 
-      window._setNeedsReportTimings = (bool _) {};
+      PlatformDispatcher.instance._setNeedsReportTimings = (bool _) {};
 
       runZoned(() {
         innerZone = Zone.current;
@@ -252,11 +270,13 @@ void main() {
         };
       });
 
-      _updateSemanticsEnabled(window._semanticsEnabled);
+      final bool newValue = !window.semanticsEnabled;
+      _updateSemanticsEnabled(newValue);
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
       expect(enabled, isNotNull);
-      expect(enabled, equals(window._semanticsEnabled));
+      expect(enabled, equals(newValue));
+      expect(enabled, equals(window.semanticsEnabled));
     });
 
     test('onSemanticsAction preserves callback zone', () {
@@ -302,47 +322,47 @@ void main() {
 
     test('onTextScaleFactorChanged preserves callback zone', () {
       Zone innerZone;
-      Zone runZone;
+      Zone runZoneTextScaleFactor;
+      Zone runZonePlatformBrightness;
       double textScaleFactor;
-
-      runZoned(() {
-        innerZone = Zone.current;
-        window.onTextScaleFactorChanged = () {
-          runZone = Zone.current;
-          textScaleFactor = window.textScaleFactor;
-        };
-      });
-
-      window.onTextScaleFactorChanged();
-      _updateTextScaleFactor(0.5);
-      expect(runZone, isNotNull);
-      expect(runZone, same(innerZone));
-      expect(textScaleFactor, equals(0.5));
-    });
-
-    test('onThemeBrightnessMode preserves callback zone', () {
-      Zone innerZone;
-      Zone runZone;
       Brightness platformBrightness;
 
       runZoned(() {
         innerZone = Zone.current;
+        window.onTextScaleFactorChanged = () {
+          runZoneTextScaleFactor = Zone.current;
+          textScaleFactor = window.textScaleFactor;
+        };
         window.onPlatformBrightnessChanged = () {
-          runZone = Zone.current;
+          runZonePlatformBrightness = Zone.current;
           platformBrightness = window.platformBrightness;
         };
       });
 
+      window.onTextScaleFactorChanged();
+
+      _updateUserSettingsData('{"textScaleFactor": 0.5, "platformBrightness": "light", "alwaysUse24HourFormat": true}');
+      expect(runZoneTextScaleFactor, isNotNull);
+      expect(runZoneTextScaleFactor, same(innerZone));
+      expect(textScaleFactor, equals(0.5));
+
+      textScaleFactor = null;
+      platformBrightness = null;
+
       window.onPlatformBrightnessChanged();
-      _updatePlatformBrightness('dark');
-      expect(runZone, isNotNull);
-      expect(runZone, same(innerZone));
+
+      _updateUserSettingsData('{"textScaleFactor": 0.5, "platformBrightness": "dark", "alwaysUse24HourFormat": true}');
+      expect(runZonePlatformBrightness, isNotNull);
+      expect(runZonePlatformBrightness, same(innerZone));
       expect(platformBrightness, equals(Brightness.dark));
     });
 
     test('Window padding/insets/viewPadding/systemGestureInsets', () {
       _updateWindowMetrics(
-        1.0,   // DPR
+        0,     // window id
+        0,     // screen id
+        10.0,  // left
+        11.0,  // top
         800.0, // width
         600.0, // height
         100.0, // depth
@@ -367,7 +387,10 @@ void main() {
       expect(window.systemGestureInsets.bottom, 0.0);
 
       _updateWindowMetrics(
-        1.0,   // DPR
+        0,     // window id
+        0,     // screen id
+        10.0,  // left
+        11.0,  // top
         800.0, // width
         600.0, // height
         100.0, // depth
@@ -379,10 +402,10 @@ void main() {
         0.0,   // inset right
         400.0, // inset bottom
         0.0,   // inset left
-        0.0,   // system gesture insets top
-        0.0,   // system gesture insets right
-        44.0,  // system gesture insets bottom
-        0.0,   // system gesture insets left
+        0.0,   // system gesture inset top
+        0.0,   // system gesture inset right
+        44.0,   // system gesture inset bottom
+        0.0,   // system gesture inset left
       );
 
       expect(window.viewInsets.bottom, 400.0);

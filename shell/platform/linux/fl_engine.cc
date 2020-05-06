@@ -3,12 +3,12 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
-#include "flutter/shell/platform/linux/fl_engine_private.h"
-
-#include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
-#include "flutter/shell/platform/linux/fl_renderer.h"
 
 #include <gmodule.h>
+
+#include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
+#include "flutter/shell/platform/linux/fl_engine_private.h"
+#include "flutter/shell/platform/linux/fl_renderer.h"
 
 static constexpr int kMicrosecondsPerNanosecond = 1000;
 
@@ -390,8 +390,7 @@ GBytes* fl_engine_send_platform_message_finish(FlEngine* self,
 
 void fl_engine_send_window_metrics_event(FlEngine* self,
                                          size_t width,
-                                         size_t height,
-                                         double pixel_ratio) {
+                                         size_t height) {
   g_return_if_fail(FL_IS_ENGINE(self));
 
   if (self->engine == nullptr)
@@ -401,8 +400,21 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
   event.struct_size = sizeof(FlutterWindowMetricsEvent);
   event.width = width;
   event.height = height;
-  event.pixel_ratio = pixel_ratio;
   FlutterEngineSendWindowMetricsEvent(self->engine, &event);
+}
+
+void fl_engine_send_screen_metrics_event(FlEngine* self,
+                                         size_t width,
+                                         size_t height,
+                                         double pixel_ratio) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  FlutterScreenMetricsEvent event = {};
+  event.struct_size = sizeof(FlutterScreenMetricsEvent);
+  event.width = width;
+  event.height = height;
+  event.pixel_ratio = pixel_ratio;
+  FlutterEngineSendScreenMetricsEvent(self->engine, &event);
 }
 
 void fl_engine_send_mouse_pointer_event(FlEngine* self,

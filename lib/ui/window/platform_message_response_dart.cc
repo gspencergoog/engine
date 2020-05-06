@@ -8,7 +8,7 @@
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/make_copyable.h"
-#include "flutter/lib/ui/window/window.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "third_party/tonic/dart_state.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
