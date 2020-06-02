@@ -4,7 +4,8 @@
 /// dart lint.dart <path to compile_commands.json> <path to git repository> [clang-tidy checks]
 ///
 /// User environment variable FLUTTER_LINT_ALL to run on all files.
-
+import 'dart:async' show Completer;
+import 'dart:convert' show jsonDecode, utf8;
 import 'dart:io'
     show
         File,
@@ -14,8 +15,6 @@ import 'dart:io'
         Directory,
         FileSystemEntity,
         Platform;
-import 'dart:convert' show jsonDecode, utf8;
-import 'dart:async' show Completer;
 
 class Command {
   String directory;
@@ -25,9 +24,9 @@ class Command {
 
 Command parseCommand(Map<String, dynamic> map) {
   return Command()
-    ..directory = map['directory']
-    ..command = map['command']
-    ..file = map['file'];
+    ..directory = map['directory'] as String
+    ..command = map['command'] as String
+    ..file = map['file'] as String;
 }
 
 String calcTidyArgs(Command command) {
@@ -44,7 +43,7 @@ String calcTidyPath(Command command) {
       .replaceAll('clang/bin/clang', 'clang/bin/clang-tidy');
 }
 
-bool isNonEmptyString(String str) => str.length > 0;
+bool isNonEmptyString(String str) => str.isNotEmpty;
 
 bool containsAny(String str, List<String> queries) {
   for (String query in queries) {
@@ -57,32 +56,32 @@ bool containsAny(String str, List<String> queries) {
 
 /// Returns a list of all files with current changes or differ from `master`.
 List<String> getListOfChangedFiles(String repoPath) {
-  final Set<String> result = Set<String>();
+  final Set<String> result = <String>{};
   final ProcessResult diffResult = Process.runSync(
-      'git', ['diff', '--name-only'],
+      'git', <String>['diff', '--name-only'],
       workingDirectory: repoPath);
   final ProcessResult diffCachedResult = Process.runSync(
-      'git', ['diff', '--cached', '--name-only'],
+      'git', <String>['diff', '--cached', '--name-only'],
       workingDirectory: repoPath);
 
   final ProcessResult mergeBaseResult = Process.runSync(
-      'git', ['merge-base', 'master', 'HEAD'],
+      'git',<String>['merge-base', 'master', 'HEAD'],
       workingDirectory: repoPath);
-  final String mergeBase = mergeBaseResult.stdout.trim();
+  final String mergeBase = (mergeBaseResult.stdout as String).trim();
   final ProcessResult masterResult = Process.runSync(
-      'git', ['diff', '--name-only', mergeBase],
+      'git', <String>['diff', '--name-only', mergeBase],
       workingDirectory: repoPath);
-  result.addAll(diffResult.stdout.split('\n').where(isNonEmptyString));
-  result.addAll(diffCachedResult.stdout.split('\n').where(isNonEmptyString));
-  result.addAll(masterResult.stdout.split('\n').where(isNonEmptyString));
+  result.addAll((diffResult.stdout as String).split('\n').where(isNonEmptyString));
+  result.addAll((diffCachedResult.stdout as String).split('\n').where(isNonEmptyString));
+  result.addAll((masterResult.stdout as String).split('\n').where(isNonEmptyString));
   return result.toList();
 }
 
 Future<List<String>> dirContents(String repoPath) {
-  Directory dir = Directory(repoPath);
-  var files = <String>[];
-  var completer = new Completer<List<String>>();
-  var lister = dir.list(recursive: true);
+  final Directory dir = Directory(repoPath);
+  final List<String> files = <String>[];
+  final Completer<List<String>> completer = Completer<List<String>>();
+  final Stream<FileSystemEntity> lister = dir.list(recursive: true);
   lister.listen((FileSystemEntity file) => files.add(file.path),
       // should also register onError
       onDone: () => completer.complete(files));
@@ -100,24 +99,24 @@ void main(List<String> arguments) async {
           : getListOfChangedFiles(repoPath);
 
   final List<dynamic> buildCommandMaps =
-      jsonDecode(await new File(buildCommandsPath).readAsString());
+      jsonDecode(await File(buildCommandsPath).readAsString()) as List<dynamic>;
   final List<Command> buildCommands =
-      buildCommandMaps.map((x) => parseCommand(x)).toList();
+      buildCommandMaps.map((dynamic x) => parseCommand(x as Map<String, dynamic>)).toList();
   final Command firstCommand = buildCommands[0];
   final String tidyPath = calcTidyPath(firstCommand);
   final List<Command> changedFileBuildCommands =
-      buildCommands.where((x) => containsAny(x.file, changedFiles)).toList();
+      buildCommands.where((Command x) => containsAny(x.file, changedFiles)).toList();
 
   int exitCode = 0;
-  //TODO(aaclarke): Coalesce this into one call using the `-p` arguement.
+  //TODO(aaclarke): Coalesce this into one call using the `-p` argument.
   for (Command command in changedFileBuildCommands) {
     final String tidyArgs = calcTidyArgs(command);
-    final List<String> args = [command.file, checks, '--'];
+    final List<String> args = <String>[command.file, checks, '--'];
     args.addAll(tidyArgs.split(' '));
     print('# linting ${command.file}');
     final Process process = await Process.start(tidyPath, args,
         workingDirectory: command.directory, runInShell: false);
-    process.stdout.transform(utf8.decoder).listen((data) {
+    process.stdout.transform(utf8.decoder).listen((String data) {
       print(data);
       exitCode = 1;
     });

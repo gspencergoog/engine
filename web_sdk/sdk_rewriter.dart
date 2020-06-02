@@ -61,18 +61,18 @@ const List<List<String>> sharedPatterns = <List<String>>[
 // So far this only requires a replace of the library declarations.
 void main(List<String> arguments) {
   final ArgResults results = argParser.parse(arguments);
-  final Directory directory = Directory(results['output-dir']);
-  final String inputDirectoryPath = results['input-dir'];
-  for (String inputFilePath in results['input']) {
+  final Directory directory = Directory(results['output-dir'] as String);
+  final String inputDirectoryPath = results['input-dir'] as String;
+  for (String inputFilePath in results['input'] as Iterable<String>) {
     final File inputFile = File(inputFilePath);
     final File outputFile = File(path.join(directory.path, inputFile.path.substring(inputDirectoryPath.length)))
       ..createSync(recursive: true);
     String source = inputFile.readAsStringSync();
     final List<List<String>> replacementPatterns = <List<String>>[];
     replacementPatterns.addAll(sharedPatterns);
-    if (results['ui']) {
+    if (results['ui'] as bool) {
       replacementPatterns.addAll(uiPatterns);
-    } else if (results['engine']) {
+    } else if (results['engine'] as bool) {
       replacementPatterns.addAll(enginePatterns);
     }
     for (List<String> patterns in replacementPatterns) {

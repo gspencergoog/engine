@@ -184,7 +184,7 @@ void _collectPublicClasses(CompilationUnit unit,
     if (directive is! PartDirective) {
       continue;
     }
-    final PartDirective partDirective = directive;
+    final PartDirective partDirective = directive as PartDirective;
     final String literalUri = partDirective.uri.toString();
     final CompilationUnit subUnit = parseDartFile(
       '$root${literalUri.substring(1, literalUri.length - 1)}',
@@ -195,7 +195,7 @@ void _collectPublicClasses(CompilationUnit unit,
       if (member is! ClassDeclaration) {
         continue;
       }
-      final ClassDeclaration classDeclaration = member;
+      final ClassDeclaration classDeclaration = member as ClassDeclaration;
       if (classDeclaration.name.name.startsWith('_')) {
         continue;
       }
@@ -210,7 +210,7 @@ void _collectPublicConstructors(ClassDeclaration classDeclaration,
     if (member is! ConstructorDeclaration) {
       continue;
     }
-    final ConstructorDeclaration method = member;
+    final ConstructorDeclaration method = member as ConstructorDeclaration;
     if (method?.name?.name == null) {
       destination['Unnamed Constructor'] = method;
       continue;
@@ -228,7 +228,7 @@ void _collectPublicMethods(ClassDeclaration classDeclaration,
     if (member is! MethodDeclaration) {
       continue;
     }
-    final MethodDeclaration method = member;
+    final MethodDeclaration method = member as MethodDeclaration;
     if (method.name.name.startsWith('_')) {
       continue;
     }

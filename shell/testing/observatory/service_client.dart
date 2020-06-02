@@ -43,7 +43,7 @@ class ServiceClient {
   }
 
   void _onData(dynamic message) {
-    final Map<String, dynamic> response = json.decode(message);
+    final Map<String, dynamic> response = json.decode(message as String) as Map<String, dynamic>;
     final dynamic key = response['id'];
     if (key != null) {
       print('<- $key');
@@ -60,7 +60,7 @@ class ServiceClient {
       }
     } else {
       if (response['method'] == 'streamNotify') {
-        _onServiceEvent(response['params']);
+        _onServiceEvent(response['params'] as Map<String, dynamic>);
       }
     }
   }
@@ -69,19 +69,19 @@ class ServiceClient {
     if (params == null) {
       return;
     }
-    final Map<String, dynamic> event = params['event'];
+    final Map<String, dynamic> event = params['event'] as Map<String, dynamic>;
     if (event == null || event['type'] != 'Event') {
       return;
     }
     final dynamic isolateId = event['isolate']['id'];
-    switch (params['streamId']) {
+    switch (params['streamId'] as String) {
       case 'Isolate':
         if (event['kind'] == 'IsolateStart') {
           isolateStartedId?.complete(isolateId);
         }
         break;
       case 'Debug':
-        switch (event['kind']) {
+        switch (event['kind'] as String) {
           case 'Resume':
             isolateResumeId?.complete(isolateId);
             break;

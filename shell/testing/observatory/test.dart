@@ -63,7 +63,7 @@ Future<Null> testHttpProtocolRequest(Uri uri) async {
   final HttpClientRequest request = await client.getUrl(uri);
   final HttpClientResponse response = await request.close();
   Expect.equals(response.statusCode, 200);
-  final Map<String, dynamic> responseAsMap = json.decode(await readResponse(response));
+  final Map<String, dynamic> responseAsMap = json.decode(await readResponse(response)) as Map<String, dynamic>;
   Expect.equals(responseAsMap['jsonrpc'], '2.0');
   client.close();
 }
@@ -111,11 +111,11 @@ Future<Null> testStartPaused(Uri uri) async {
   final Map<String, dynamic> response = await serviceClient.invokeRPC('getVM');
   Expect.equals(response['type'], 'VM');
   String isolateId;
-  if (response['isolates'].length > 0) {
-    isolateId = response['isolates'][0]['id'];
+  if ((response['isolates'] as List<Map<String, dynamic>>).isNotEmpty) {
+    isolateId = response['isolates'][0]['id'] as String;
   } else {
     // Wait until isolate starts.
-    isolateId = await isolateStartedId.future;
+    isolateId = await isolateStartedId.future as String;
   }
 
   // Grab the isolate.

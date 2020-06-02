@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:collection/collection.dart' show MapEquality;
 
 // This script verifies that the release binaries only export the expected
 // symbols.
@@ -69,7 +68,7 @@ int _checkIos(String outPath, String nmPath, Iterable<String> builds) {
       failures++;
       continue;
     }
-    final Iterable<NmEntry> unexpectedEntries = NmEntry.parse(nmResult.stdout).where((NmEntry entry) {
+    final Iterable<NmEntry> unexpectedEntries = NmEntry.parse(nmResult.stdout as String).where((NmEntry entry) {
       return !(((entry.type == '(__DATA,__common)' || entry.type == '(__DATA,__const)') && entry.name.startsWith('_Flutter'))
           || (entry.type == '(__DATA,__objc_data)'
               && (entry.name.startsWith('_OBJC_METACLASS_\$_Flutter') || entry.name.startsWith('_OBJC_CLASS_\$_Flutter'))));
@@ -101,11 +100,11 @@ int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
       failures++;
       continue;
     }
-    final Iterable<NmEntry> entries = NmEntry.parse(nmResult.stdout);
+    final Iterable<NmEntry> entries = NmEntry.parse(nmResult.stdout as String);
     final Map<String, String> entryMap = Map<String, String>.fromIterable(
         entries,
-        key: (dynamic entry) => entry.name,
-        value: (dynamic entry) => entry.type);
+        key: (dynamic entry) => entry.name as String,
+        value: (dynamic entry) => entry.type as String);
     final Map<String, String> expectedSymbols = <String, String>{
       'JNI_OnLoad': 'T',
       '_binary_icudtl_dat_size': 'A',

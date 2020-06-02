@@ -49,7 +49,7 @@ Future<void> main(List<String> args) async {
   // eventually migrate to flutter-infra project once the test is done.
   final FlutterDestination destination =
       await FlutterDestination.makeFromCredentialsJson(
-    jsonDecode(Platform.environment['BENCHMARK_GCP_CREDENTIALS']),
+    jsonDecode(Platform.environment['BENCHMARK_GCP_CREDENTIALS']) as Map<String, dynamic>,
   );
   await destination.update(points);
 }

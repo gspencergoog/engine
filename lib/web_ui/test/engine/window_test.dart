@@ -243,8 +243,8 @@ void main() {
     // Trigger a change notification (reset locales because the notification
     // doesn't actually change the list of languages; the test only observes
     // that the list is populated again).
-    window.debugResetLocales();
-    expect(window.locales, null);
+    EnginePlatformDispatcher.instance.debugResetLocales();
+    expect(window.locales, isEmpty);
     expect(localeChangedCount, 0);
     html.window.dispatchEvent(html.Event('languagechange'));
     expect(window.locales, isNotEmpty);

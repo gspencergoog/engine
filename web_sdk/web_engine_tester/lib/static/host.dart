@@ -118,9 +118,9 @@ void main() {
     final MultiChannel<dynamic> serverChannel = _connectToServer();
     serverChannel.stream.listen((dynamic message) {
       if (message['command'] == 'loadSuite') {
-        final int channelId = message['channel'];
-        final String url = message['url'];
-        final int messageId = message['id'];
+        final int channelId = message['channel'] as int;
+        final String url = message['url'] as String;
+        final int messageId = message['id'] as int;
         final VirtualChannel<dynamic> suiteChannel = serverChannel.virtualChannel(channelId);
         final StreamChannel<dynamic> iframeChannel = _connectToIframe(url, messageId);
         suiteChannel.pipe(iframeChannel);
@@ -165,7 +165,7 @@ MultiChannel<dynamic> _connectToServer() {
 
   final StreamChannelController<dynamic> controller = StreamChannelController<dynamic>(sync: true);
   webSocket.onMessage.listen((MessageEvent message) {
-    final String data = message.data;
+    final String data = message.data as String;
     controller.local.sink.add(jsonDecode(data));
   });
 
