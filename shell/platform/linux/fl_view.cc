@@ -215,11 +215,11 @@ static void fl_view_size_allocate(GtkWidget* widget,
                            allocation->height);
   }
 
-  fl_engine_send_window_metrics_event(self->engine, allocation->width,
-                                      allocation->height, 1);
   // TODO(robert-ancell): This pixel ratio won't work on hidpi displays.
   fl_engine_send_screen_metrics_event(self->engine, allocation->width,
                                       allocation->height, 1);
+  fl_engine_send_window_metrics_event(self->engine, allocation->width,
+                                      allocation->height);
 }
 
 // Implements GtkWidget::button_press_event.
