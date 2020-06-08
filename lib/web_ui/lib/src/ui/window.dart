@@ -197,10 +197,10 @@ class Locale {
 }
 
 abstract class FlutterView {
-  PlatformDispatcher get platformDispatcher;
-  ViewConfiguration get viewConfiguration;
+  PlatformDispatcher/*!*/ get platformDispatcher;
+  ViewConfiguration/*!*/ get viewConfiguration;
   double/*!*/ get devicePixelRatio => viewConfiguration.screen.configuration.devicePixelRatio;
-  Rect get physicalGeometry => viewConfiguration.geometry;
+  Rect/*!*/ get physicalGeometry => viewConfiguration.geometry;
   Size/*!*/ get physicalSize => viewConfiguration.geometry.size;
   double/*!*/ get physicalDepth => viewConfiguration.depth;
   WindowPadding/*!*/ get viewInsets => viewConfiguration.viewInsets;
@@ -214,17 +214,17 @@ abstract class FlutterView {
 
 abstract class FlutterWindowView extends FlutterView {
   @override
-  ViewConfiguration get viewConfiguration;
+  ViewConfiguration/*!*/ get viewConfiguration;
 }
 
 abstract class FlutterWindow extends FlutterView {
   @override
-  ViewConfiguration get viewConfiguration;
+  ViewConfiguration/*!*/ get viewConfiguration;
 }
 
 abstract class SingletonFlutterWindow extends FlutterWindow {
-  VoidCallback get onMetricsChanged => platformDispatcher.onMetricsChanged;
-  set onMetricsChanged(VoidCallback callback) {
+  VoidCallback/*?*/ get onMetricsChanged => platformDispatcher.onMetricsChanged;
+  set onMetricsChanged(VoidCallback/*?*/ callback) {
     platformDispatcher.onMetricsChanged = callback;
   }
 
