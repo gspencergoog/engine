@@ -523,7 +523,10 @@ class Locale {
 /// A view into which a Flutter [Scene] is drawn.
 ///
 /// Each [FlutterView] has its own layer tree that is rendered into an area
-/// inside of a [FlutterWindow] whenever [render] is called with a [Scene].
+/// inside of the [FlutterWindow] whenever [render] is called with a [Scene].
+///
+/// New views can be created by the [PlatformDispatcher], using
+/// [PlatformDispatcher.createView].
 ///
 /// ## Insets and Padding
 ///
@@ -782,6 +785,42 @@ abstract class FlutterView {
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
   void render(Scene/*!*/ scene) => platformDispatcher.render(scene, this);
+
+  /// Dispose of this view, closing it permanently.
+  ///
+  /// This function should be called in response to a call to
+  /// [PlatformDispatcher.onViewDisposed], or to permanently dispose of a view
+  /// that the application would like to close.
+  void dispose() => platformDispatcher.disposeView(this);
+}
+
+/// A type of [FlutterView] that can be hosted inside of a [FlutterWindow], into
+/// which a Flutter [Scene] is drawn.
+///
+/// A [FlutterWindowView] has its own layer tree that is rendered into an area
+/// inside of a [FlutterWindow] when [render] is called with a [Scene].
+///
+/// A [FlutterWindow] is a subclass of a [FlutterView] that is a separate window
+/// which can host other [FlutterView]s.
+///
+/// A `FlutterWindowView` can only be created by [PlatformDispatcher.createView]
+/// where the requested configuration includes a parent [FlutterWindow] set as
+/// the [ViewConfiguration.window].
+class FlutterWindowView extends FlutterView {
+  FlutterWindowView._({Object viewId, this.platformDispatcher})
+      : _viewId = viewId;
+
+  /// The opaque ID for this view.
+  final Object _viewId;
+
+  @override
+  final PlatformDispatcher platformDispatcher;
+
+  @override
+  ViewConfiguration get viewConfiguration {
+    assert(platformDispatcher._viewConfigurations.containsKey(_viewId));
+    return platformDispatcher._viewConfigurations[_viewId];
+  }
 }
 
 /// A top-level platform window displaying a Flutter layer tree drawn from a
