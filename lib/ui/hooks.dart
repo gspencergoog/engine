@@ -75,7 +75,7 @@ void _updateWindowMetrics(
 // ignore: unused_element
 void _updateScreenMetrics(
   Object/*!*/ id,
-  String/*!*/ displayName,
+  String/*!*/ screenName,
   double/*!*/ left,
   double/*!*/ top,
   double/*!*/ width,
@@ -97,7 +97,7 @@ void _updateScreenMetrics(
   final ScreenConfiguration previousConfiguration =
       PlatformDispatcher.instance._screenConfigurations[id] ?? const ScreenConfiguration();
   PlatformDispatcher.instance._screenConfigurations[id] = previousConfiguration.copyWith(
-    screenName: displayName,
+    screenName: screenName,
     geometry: Rect.fromLTWH(left, top, width, height),
     devicePixelRatio: devicePixelRatio,
     viewPadding: WindowPadding._(
