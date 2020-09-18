@@ -183,6 +183,10 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
   // A mapping of textureID to internal FlutterExternalTextureGL adapter.
   NSMutableDictionary<NSNumber*, FlutterExternalTextureGL*>* _textures;
+
+  // A relay for the binary messenger so that plugins don't keep the engine alive
+  // when they shouldn't.
+  FlutterBinaryMessengerRelay* _binaryMessenger;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -298,6 +302,19 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   // TODO(stuartmorgan): Switch to FlutterBinaryMessengerRelay to avoid plugins
   // keeping the engine alive.
   return self;
+}
+
+- (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
+  return _binaryMessenger;
+}
+
+// For test only. Ideally we should create a dependency injector for all dependencies and
+// remove this.
+- (void)setBinaryMessenger:(FlutterBinaryMessengerRelay*)binaryMessenger {
+  // Discard the previous messenger and keep the new one.
+  _binaryMessenger.parent = nil;
+  [_binaryMessenger release];
+  _binaryMessenger = [binaryMessenger retain];
 }
 
 #pragma mark - Framework-internal methods
