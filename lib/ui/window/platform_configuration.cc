@@ -198,8 +198,9 @@ PlatformConfiguration::~PlatformConfiguration() {}
 void PlatformConfiguration::DidCreateIsolate() {
   library_.Set(tonic::DartState::Current(),
                Dart_LookupLibrary(tonic::ToDart("dart:ui")));
-  windows_.insert(std::make_pair(0, std::unique_ptr<Window>(new Window{
-                                        0, ViewportMetrics{1.0, 0.0, 0.0}})));
+  windows_.insert(
+      std::make_pair(0, std::unique_ptr<Window>(new Window{
+                            0, ViewportMetrics{1.0, 0.0, 0.0, 0.0, 0.0}})));
 }
 
 void PlatformConfiguration::UpdateLocales(

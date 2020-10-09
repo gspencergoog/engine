@@ -81,6 +81,8 @@ void main() {
       _updateWindowMetrics(
         oldWindowId!,                    // window id
         oldDevicePixelRatio!,            // device pixel ratio
+        oldGeometry!.left,               // window left coordinate
+        oldGeometry!.top,                // window top coordinate
         oldGeometry!.width,              // width
         oldGeometry!.height,             // height
         oldPadding!.top,                 // padding top
@@ -166,6 +168,8 @@ void main() {
     _updateWindowMetrics(
       0,      // window id
       0.1234, // device pixel ratio
+      0.0,    // device pixel ratio
+      0.0,    // top
       0.0,    // width
       0.0,    // height
       0.0,    // padding top
@@ -381,6 +385,8 @@ void main() {
     _updateWindowMetrics(
       0,     // window id
       0,     // screen id
+      10.0,  // left
+      11.0,  // top
       800.0, // width
       600.0, // height
       50.0,  // padding top
@@ -405,6 +411,8 @@ void main() {
     _updateWindowMetrics(
       0,     // window id
       0,     // screen id
+      10.0,  // left
+      11.0,  // top
       800.0, // width
       600.0, // height
       50.0,  // padding top

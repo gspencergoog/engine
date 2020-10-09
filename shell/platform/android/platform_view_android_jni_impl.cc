@@ -241,6 +241,8 @@ static void SetViewportMetrics(JNIEnv* env,
                                jobject jcaller,
                                jlong shell_holder,
                                jfloat devicePixelRatio,
+                               jint physicalLeft,
+                               jint physicalTop,
                                jint physicalWidth,
                                jint physicalHeight,
                                jint physicalPaddingTop,
@@ -257,6 +259,8 @@ static void SetViewportMetrics(JNIEnv* env,
                                jint systemGestureInsetLeft) {
   const flutter::ViewportMetrics metrics{
       static_cast<double>(devicePixelRatio),
+      static_cast<double>(physicalLeft),
+      static_cast<double>(physicalTop),
       static_cast<double>(physicalWidth),
       static_cast<double>(physicalHeight),
       static_cast<double>(physicalPaddingTop),
@@ -583,7 +587,7 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeSetViewportMetrics",
-          .signature = "(JFIIIIIIIIIIIIII)V",
+          .signature = "(JFIIIIIIIIIIIIIIII)V",
           .fnPtr = reinterpret_cast<void*>(&SetViewportMetrics),
       },
       {
