@@ -56,6 +56,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterEngineGroup.mm",
     "framework/Source/FlutterEngine_Internal.h",
     "framework/Source/FlutterHeadlessDartRunner.mm",
+    "framework/Source/FlutterIntermediateKeyResponder.h",
+    "framework/Source/FlutterIntermediateKeyResponder.mm",
     "framework/Source/FlutterObservatoryPublisher.h",
     "framework/Source/FlutterObservatoryPublisher.mm",
     "framework/Source/FlutterOverlayView.h",

@@ -680,11 +680,13 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 #pragma mark - Text input delegate
 
 - (void)updateEditingClient:(int)client withState:(NSDictionary*)state {
+  NSLog(@"Updating editing client: %@", state);
   [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingState"
                               arguments:@[ @(client), state ]];
 }
 
 - (void)updateEditingClient:(int)client withState:(NSDictionary*)state withTag:(NSString*)tag {
+  NSLog(@"Updating editing client with tag: %@, %@", state, tag);
   [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingStateWithTag"
                               arguments:@[ @(client), @{tag : state} ]];
 }

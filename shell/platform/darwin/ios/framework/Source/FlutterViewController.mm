@@ -20,6 +20,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIntermediateKeyResponder.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
@@ -63,6 +64,16 @@ typedef struct MouseState {
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
+
+/**
+ * A list of additional responders to keyboard events.
+ *
+ * Keyboard events received by FlutterViewController are first dispatched to
+ * each additional responder in order. If any of them handle the event (by
+ * returning true), the event is not dispatched to later additional responders
+ * or to the nextResponder.
+ */
+@property(nonatomic) NSMutableOrderedSet<FlutterIntermediateKeyResponder*>* additionalKeyResponders;
 @end
 
 // The following conditional compilation defines an API 13 concept on earlier API targets so that
@@ -231,6 +242,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
+  _additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
 
   [self setupNotificationCenterObservers];
 }
@@ -1069,7 +1081,51 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self updateViewportMetrics];
 }
 
-- (void)dispatchPresses:(NSSet<UIPress*>*)presses API_AVAILABLE(ios(13.4)) {
+- (void)addKeyResponder:(FlutterIntermediateKeyResponder*)responder {
+  [self.additionalKeyResponders addObject:responder];
+}
+
+- (void)removeKeyResponder:(FlutterIntermediateKeyResponder*)responder {
+  [self.additionalKeyResponders removeObject:responder];
+}
+
+- (void)propagateKeyEvent:(UIPress*)press withEvent:(UIEvent*)event API_AVAILABLE(ios(13.4)) {
+  NSLog(@"Propagating key event %@", event);
+  if (@available(iOS 13.4, *)) {
+
+    if (event.type != UIEventTypePresses) {
+      return;
+    }
+    if (press.phase == UIPressPhaseBegan) {
+      for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
+        if ([responder pressesBegan:press withEvent: event]) {
+          return;
+        }
+      }
+      [self.nextResponder pressesBegan:[NSSet setWithObject:press] withEvent:(UIPressesEvent* )event];
+    } else if (press.phase == UIPressPhaseEnded) {
+      for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
+        if ([responder pressesEnded:press withEvent:event]) {
+          return;
+        }
+      }
+      [self.nextResponder pressesEnded:[NSSet setWithObject:press] withEvent:(UIPressesEvent* )event];
+    } else if (press.phase == UIPressPhaseCancelled) {
+      for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
+        [responder pressesCancelled:press withEvent:event];
+      }
+      [self.nextResponder pressesCancelled:[NSSet setWithObject:press] withEvent:(UIPressesEvent* )event];
+    } else if (press.phase == UIPressPhaseChanged) {
+      for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
+        [responder pressesChanged:press withEvent:event];
+      }
+      [self.nextResponder pressesChanged:[NSSet setWithObject:press] withEvent:(UIPressesEvent* )event];
+    }
+  }
+}
+
+- (void)dispatchPresses:(NSSet<UIPress*>*)presses
+              withEvent:(UIEvent*)event API_AVAILABLE(ios(13.4)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
       if (press.key == nil || press.phase == UIPressPhaseStationary ||
@@ -1091,33 +1147,51 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         keyMessage[@"type"] = @"keyup";
       }
 
-      [[_engine.get() keyEventChannel] sendMessage:keyMessage];
+      auto weakSelf = [self getWeakPtr];
+      FlutterReply replyHandler = ^(id _Nullable reply) {
+        if (!reply) {
+          return;
+        }
+        // Only re-dispatch the event to other responders if the framework didn't handle it.
+        if (![[reply valueForKey:@"handled"] boolValue]) {
+          NSLog(@"Key event not handled by framework: %@", event);
+          if (weakSelf) {
+            [weakSelf.get() propagateKeyEvent:press withEvent:event];
+          }
+        } else {
+          NSLog(@"Key event handled by framework: %@", event);
+        }
+      };
+      NSLog(@"Sending key event to framework: %@", event);
+      [[_engine.get() keyEventChannel] sendMessage:keyMessage reply:replyHandler];
     }
   }
 }
 
 - (void)pressesBegan:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  NSLog(@"Received pressesBegan: %@", event);
+
   if (@available(iOS 13.4, *)) {
-    [self dispatchPresses:presses];
+    [self dispatchPresses:presses withEvent:event];
   }
 }
 
 - (void)pressesChanged:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
-    [self dispatchPresses:presses];
+    [self dispatchPresses:presses withEvent:event];
   }
 }
 
 - (void)pressesEnded:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
-    [self dispatchPresses:presses];
+    [self dispatchPresses:presses withEvent:event];
   }
 }
 
 - (void)pressesCancelled:(NSSet<UIPress*>*)presses
                withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
-    [self dispatchPresses:presses];
+    [self dispatchPresses:presses withEvent:event];
   }
 }
 

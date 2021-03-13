@@ -544,6 +544,14 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return self;
 }
 
+// Need to implement this here and forward presses to the view controller.
+- (void)pressesBegan:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  NSLog(@"Received pressesBegan: %@", event);
+  if (event.type == UIEventTypePresses) {
+    [self.nextResponder pressesBegan: presses withEvent:(UIPressesEvent*)event];
+  }
+}
+
 - (void)configureWithDictionary:(NSDictionary*)configuration {
   NSDictionary* inputType = configuration[kKeyboardType];
   NSString* keyboardAppearance = configuration[kKeyboardAppearance];
