@@ -26,19 +26,22 @@ namespace {
 constexpr char kChannelName[] = "flutter/menu";
 constexpr char kBadArgumentsError[] = "Bad Arguments";
 constexpr char kNoScreenError[] = "No Screen";
-constexpr char kMenuSetMethod[] = "Menu.SetMenu";
-constexpr char kMenuItemOpenedMethod[] = "Menu.Opened";
-constexpr char kMenuItemClosedMethod[] = "Menu.Closed";
-constexpr char kMenuItemSelectedCallbackMethod[] = "Menu.SelectedCallback";
+constexpr char kMenuSetMethod[] = "Menu.setMenu";
+constexpr char kMenuItemOpenedMethod[] = "Menu.opened";
+constexpr char kMenuItemClosedMethod[] = "Menu.closed";
+constexpr char kMenuItemSelectedCallbackMethod[] = "Menu.selectedCallback";
 constexpr char kMenuActionPrefix[] = "flutter-menu-";
 constexpr char kIdKey[] = "id";
 constexpr char kLabelKey[] = "label";
 constexpr char kEnabledKey[] = "enabled";
 constexpr char kChildrenKey[] = "children";
 constexpr char kIsDividerKey[] = "isDivider";
-constexpr char kShortcutTrigger[] = "shortcutTrigger";
-constexpr char kShortcutModifiers[] = "shortcutModifiers";
-constexpr char kPlatformDefaultMenuKey[] = "platformDefaultMenu";
+constexpr char kShortcutEquivalentKey[] = "shortcutEquivalent";
+constexpr char kShortcutTriggerKey[] = "shortcutTrigger";
+constexpr char kShortcutModifiersKey[] = "shortcutModifiers";
+constexpr char kPlatformProvidedMenuKey[] = "platformProvidedMenu";
+
+// Key shortcut constants
 constexpr int kFlutterShortcutModifierMeta = 1 << 0;
 constexpr int kFlutterShortcutModifierShift = 1 << 1;
 constexpr int kFlutterShortcutModifierAlt = 1 << 2;
@@ -54,14 +57,14 @@ void about_app() {
 }
 }  // namespace
 
-static const std::map<int, std::function<void()>> kLinuxDefaultMenus = {
-    {PlatformProvidedMenu::about, about_app},
-    {PlatformProvidedMenu::quit, quit_app},
+static const std::map<flutter::PlatformProvidedMenu, std::function<void()>> kLinuxDefaultMenus = {
+    {flutter::PlatformProvidedMenu::kAbout, about_app},
+    {flutter::PlatformProvidedMenu::kQuit, quit_app},
 };
 
 static const std::map<int, std::string> kLinuxDefaultMenuLabels = {
-    {PlatformProvidedMenu::about, "About"},
-    {PlatformProvidedMenu::quit, "Quit"},
+    {flutter::PlatformProvidedMenu::kAbout, "About"},
+    {flutter::PlatformProvidedMenu::kQuit, "Quit"},
 };
 
 std::map<uint64_t, uint64_t> logical_key_map_to_gtk_keyval;
@@ -99,10 +102,15 @@ static void add_menu_accelerator(FlMenuPlugin* self,
                                  GMenuItem* menu_item,
                                  FlValue* value,
                                  const gchar* action_name) {
+  FlValue* shortcut_equivalent_value =
+      fl_value_lookup_string(value, kShortcutEquivalentKey);
   FlValue* shortcut_trigger_value =
-      fl_value_lookup_string(value, kShortcutTrigger);
+      fl_value_lookup_string(value, kShortcutTriggerKey);
   FlValue* shortcut_modifiers_value =
-      fl_value_lookup_string(value, kShortcutModifiers);
+      fl_value_lookup_string(value, kShortcutModifiersKey);
+  if (shortcut_equivalent_value != nullptr) {
+    // Map the given character to a known key. Yeah, right.
+  }
   if (shortcut_trigger_value == nullptr ||
       shortcut_modifiers_value == nullptr) {
     return;
@@ -263,7 +271,7 @@ static void add_default_menu(FlMenuPlugin* self,
                              FlValue* value,
                              bool is_enabled) {
   FlValue* default_menu_value =
-      fl_value_lookup_string(value, kPlatformDefaultMenuKey);
+      fl_value_lookup_string(value, kPlatformProvidedMenuKey);
   g_autoptr(GString) default_activate_action_name =
       g_string_new(kMenuActionPrefix);
   int64_t default_menu = fl_value_get_int(default_menu_value);
@@ -362,7 +370,7 @@ static GMenuItem* value_to_menu_item(FlMenuPlugin* self,
   bool has_children = children != nullptr && fl_value_get_length(children) > 0;
 
   FlValue* default_menu_value =
-      fl_value_lookup_string(value, kPlatformDefaultMenuKey);
+      fl_value_lookup_string(value, kPlatformProvidedMenuKey);
   if (default_menu_value != nullptr) {
     add_default_menu(self, item, value, is_enabled);
   } else {
